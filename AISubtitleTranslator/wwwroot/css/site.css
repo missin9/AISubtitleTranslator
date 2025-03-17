@@ -1,0 +1,196 @@
+﻿body {
+    background-color: #f4f6f9;
+    font-family: 'Inter', sans-serif;
+}
+
+.container {
+    max-width: 800px;
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 2rem;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: #007bff;
+    color: white;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    transform: scale(1.02);
+}
+
+.progress {
+    height: 25px;
+    border-radius: 8px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 8px;
+    transition: width 0.2s ease-in-out;
+}
+
+.subtitle-container {
+    height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px;
+    will-change: scroll-position;
+    scroll-behavior: smooth;
+}
+
+.subtitle-container .block-number {
+    position: sticky;
+    top: 0;
+    background-color: inherit;
+    z-index: 2;
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.subtitle-block {
+    background-color: #f8f9fa;
+    border-left: 4px solid #ff3be5;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, height 0.2s ease-out;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.subtitle-block:hover {
+    background-color: #e9ecef;
+}
+
+.subtitle-block .block-number {
+    font-weight: bold;
+    color: #ff3be5;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.subtitle-block .translation {
+    white-space: pre-wrap;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+
+#originalSubtitles, #translatedSubtitles {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+#resultsContainer {
+    max-height: 800px;
+    margin-top: 2rem !important;
+}
+
+#resultsContainer .card {
+    margin-top: 0;
+}
+
+#resultsContainer .card-body {
+    padding: 1rem;
+}
+
+.subtitle-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.subtitle-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.subtitle-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.subtitle-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+@media (max-width: 768px) {
+    .card {
+        margin-top: 1rem;
+    }
+}
+
+.translation-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.translation-controls .btn {
+    font-weight: 600;
+    min-width: 120px;
+    transition: all 0.3s ease;
+}
+
+.context-container {
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.context-block {
+    padding: 5px 0;
+}
+
+.form-check-inline .form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.form-check-inline {
+    background-color: #f8f9fa;
+    padding: 8px 15px;
+    border-radius: 8px;
+    margin-right: 15px;
+    transition: all 0.2s ease;
+}
+
+.form-check-inline:hover {
+    background-color: #e9ecef;
+}
+
+.form-check-inline .form-check-label {
+    font-weight: 500;
+}

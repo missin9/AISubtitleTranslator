@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="TiktokenSharp" Version="1.1.7"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Update="wwwroot\css\site.css">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Update="wwwroot\js\site.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Update="Shared\_Layout.html">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <_ContentIncludedByDefault Remove="Shared\_Layout.cshtml"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="Services\TranslationService.cs">
+            <DependentUpon>ITranslationService.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Services\FileService.cs">
+            <DependentUpon>IFileService.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Services\MistralTranslator.cs">
+            <DependentUpon>IMistralTranslator.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Services\SrtParser.cs">
+            <DependentUpon>ISrtParser.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Services\VerificationService.cs">
+            <DependentUpon>IVerificationService.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Services\VerificationService.cs">
+            <DependentUpon>IVerificationService.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Services\HubCommunicationService.cs">
+            <DependentUpon>IHubCommunicationService.cs</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,204 @@
+﻿@page
+@model AISubtitleTranslator.Pages.IndexModel
+@{
+    ViewBag.Title = "Index";
+    Layout = "/Pages/Shared/_Layout.cshtml";
+}
+@{
+    ViewData["Title"] = "SRT Translator";
+}
+
+<div class="container py-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h1 class="h4 m-0">Переводчик SRT</h1>
+        </div>
+        <div class="card-body">
+            <!-- Форма перевода -->
+            <div id="translationFormContainer">
+                <form method="post" enctype="multipart/form-data" id="translationForm">
+                    <div class="mb-3">
+                        <label for="UploadedFile" class="form-label">Загрузить SRT файл:</label>
+                        <input type="file" class="form-control" id="UploadedFile" name="UploadedFile" accept=".srt"
+                               required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="TargetLanguage" class="form-label">Целевой язык:</label>
+                            <select class="form-select" id="TargetLanguage" name="TargetLanguage">
+                                <option>Russian</option>
+                                <option>French</option>
+                                <option>German</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="ContextSize" class="form-label">Размер контекста:</label>
+                            <select class="form-select" id="ContextSize" name="ContextSize">
+                                <option value="small">Малый контекст</option>
+                                <option value="medium" selected>Средний контекст</option>
+                                <option value="large">Большой контекст</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="TranslationStyle" class="form-label">Стиль перевода:</label>
+                            <select class="form-select" id="TranslationStyle" name="TranslationStyle">
+                                <option value="Precise">Точный перевод</option>
+                                <option value="Natural" selected>Естественный перевод</option>
+                                <option value="Creative">Креативный перевод</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Перевести</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Progress bar and control buttons -->
+            <div class="progress-container">
+                <div class="progress my-3" style="height: 25px; display: none;" id="progressContainer">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                         style="width: 0;" id="progressBar">0%
+                    </div>
+                </div>
+
+                <div class="translation-controls mt-2" style="display: none;" id="translationControls">
+                    <button type="button" class="btn btn-warning" id="pauseTranslationBtn">
+                        <i class="bi bi-pause-fill"></i> Пауза
+                    </button>
+                    <button type="button" class="btn btn-danger" id="cancelTranslationBtn">
+                        <i class="bi bi-x-circle-fill"></i> Отменить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Секция для вывода результатов перевода -->
+    <div class="row mt-3" id="resultsContainer" style="display: none;">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="m-0">Оригинальные субтитры</h5>
+                </div>
+                <div class="card-body p-2 subtitle-container" id="originalSubtitles">
+                    <!-- Здесь будут отображаться оригинальные блоки -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="m-0">Переведённые субтитры</h5>
+                </div>
+                <div class="card-body p-2 subtitle-container" id="translatedSubtitles">
+                    <!-- Здесь будут отображаться переведённые блоки -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для подтверждения перевода -->
+<div class="modal fade" id="translationApprovalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение перевода</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">Контекст до</h6>
+                        <div id="contextBefore" class="context-container"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="border-bottom pb-2">Контекст после</h6>
+                        <div id="contextAfter" class="context-container"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Оригинальный текст:</label>
+                    <div class="border rounded p-2" id="originalText"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Предыдущий перевод:</label>
+                    <div class="border rounded p-2" id="previousTranslation"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Новый перевод:</label>
+                    <div class="border rounded p-2" id="newTranslation"></div>
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-secondary" id="editTranslationBtn">
+                            <i class="bi bi-pencil"></i> Редактировать
+                        </button>
+                    </div>
+                    <div class="mt-2 d-none" id="editTranslationForm">
+                        <textarea class="form-control" id="manualTranslation" rows="3"></textarea>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-primary" id="saveManualTranslation">Сохранить</button>
+                            <button class="btn btn-sm btn-secondary" id="cancelManualTranslation">Отмена</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Найденные проблемы:</label>
+                    <div class="border rounded p-2" id="issuesList"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="skipTranslation">Пропустить</button>
+                <button type="button" class="btn btn-primary" id="approveTranslation">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Стили для панели статуса проверки -->
+<style>
+    .verification-status-panel {
+        position: relative;
+        border-left: 4px solid #0d6efd;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .verification-status-panel .card-header {
+        border-bottom: none;
+    }
+
+    .verification-status-panel .card-body {
+        padding: 1rem;
+    }
+
+    .verification-status-panel .step-info {
+        margin-bottom: 1rem;
+    }
+
+    .verification-status-panel .progress {
+        height: 20px;
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .context-container {
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+</style>
+
