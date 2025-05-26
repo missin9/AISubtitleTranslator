@@ -1,10 +1,10 @@
-﻿using AISubtitleTranslator.Models;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using AISubtitleTranslator.Models;
 
 namespace AISubtitleTranslator.Services;
 
-/// <summary>
-/// Сервис перевода с использованием API Mistral
-/// </summary>
 public class MistralTranslator : IMistralTranslator
 {
     private readonly HttpClient _client;
@@ -16,18 +16,23 @@ public class MistralTranslator : IMistralTranslator
         _parser = parser;
     }
 
-    /// <summary>
-    /// Перевод группы блоков
-    /// </summary>
-    public async Task<Dictionary<int, string>> TranslateBatch(
+    public async Task<TranslationResponse> TranslateBatch(
         List<SrtBlock> batch,
         List<SrtBlock> contextBefore,
         List<SrtBlock> contextAfter,
         Dictionary<int, string> existingTranslations,
-        TranslationConfig config)
+        TranslationConfig config,
+        Dictionary<string, string> termTranslations)
     {
+        if (batch == null || !batch.Any())
+            throw new ArgumentException("Batch cannot be null or empty", nameof(batch));
+        if (config == null)
+            throw new ArgumentNullException(nameof(config));
+        if (string.IsNullOrEmpty(config.Language))
+            throw new ArgumentException("Language cannot be empty", nameof(config.Language));
+
         var userPrompt = BuildTranslationPrompt(
-            batch, contextBefore, contextAfter, existingTranslations, config.Language);
+            batch, contextBefore, contextAfter, existingTranslations, config.Language, termTranslations);
 
         var request = new
         {
@@ -43,50 +48,116 @@ public class MistralTranslator : IMistralTranslator
         };
 
         var response = await _client.PostAsJsonAsync("chat/completions", request);
-        var result = await response.Content.ReadFromJsonAsync<MistralResponse>();
-        var translatedText = result?.Choices.FirstOrDefault()?.Message.Content ?? "";
+        response.EnsureSuccessStatusCode();
+        var responseString = await response.Content.ReadAsStringAsync();
 
-        await Task.Delay(1000);
+        // Десериализуем ответ API
+        var result = JsonSerializer.Deserialize<MistralResponse>(responseString);
+        if (result == null || result.Choices == null || !result.Choices.Any())
+        {
+            throw new InvalidOperationException("Failed to receive a valid response from the API.");
+        }
 
-        var translationsDict = _parser.ParseMistralResponse(translatedText, batch);
-        var cleanTranslations = new Dictionary<int, string>();
+        var translatedJson = result.Choices[0].Message.Content;
 
-        foreach (var (blockNumber, translation) in translationsDict)
-            cleanTranslations[blockNumber] = _parser.CleanTranslation(translation);
+        // Извлекаем чистый JSON из Markdown-блока
+        var jsonContent = ExtractJsonFromMarkdown(translatedJson);
 
-        return cleanTranslations;
+        // Десериализуем извлеченный JSON в TranslationResponse
+        var translationResponse = JsonSerializer.Deserialize<TranslationResponse>(jsonContent);
+        if (translationResponse == null)
+        {
+            throw new InvalidOperationException("Failed to deserialize translation response.");
+        }
+
+        // Обновляем термины
+        if (translationResponse.Terms.Count != 0)
+        {
+            foreach (var term in translationResponse.Terms)
+            {
+                if (!termTranslations.ContainsKey(term.Key))
+                    termTranslations[term.Key] = term.Value;
+            }
+        }
+
+        return translationResponse;
     }
 
-    /// <summary>
-    /// Построение промпта для перевода
-    /// </summary>
     private string BuildTranslationPrompt(
         List<SrtBlock> batch,
         List<SrtBlock> contextBefore,
         List<SrtBlock> contextAfter,
         Dictionary<int, string> translations,
-        string language)
+        string language,
+        Dictionary<string, string> termTranslations)
     {
-        return $"""
-                CONTEXT BEFORE:
-                {string.Join("\n\n", contextBefore.Select(b => $"BLOCK {b.Number}:\n{translations.GetValueOrDefault(b.Number, b.Text)}"))}
+        var knownTerms = termTranslations.Any()
+            ? string.Join("\n", termTranslations.Select(t => $"- {t.Key} -> {t.Value}"))
+            : "No known terms yet.";
 
-                TRANSLATE ONLY THESE BLOCKS {batch.First().Number}-{batch.Last().Number} TO THE {language.ToUpper()} LANGUAGE:
-                {string.Join("\n\n", batch.Select(b => $"BLOCK {b.Number}:\n{b.Text}"))}
+        return $$"""
+                KNOWN TERMS:
+                {{knownTerms}}
+
+                CONTEXT BEFORE:
+                {{string.Join("\n\n", contextBefore.Select(b => $"BLOCK {b.Number}:\n{translations.GetValueOrDefault(b.Number, b.Text)}"))}}
+
+                TRANSLATE ONLY THESE BLOCKS {{batch.First().Number}}-{{batch.Last().Number}} TO THE {{language.ToUpper()}} LANGUAGE:
+                {{string.Join("\n\n", batch.Select(b => $"BLOCK {b.Number}:\n{b.Text}"))}}
 
                 CONTEXT AFTER:
-                {string.Join("\n\n", contextAfter.Select(b => $"BLOCK {b.Number}:\n{b.Text}"))}
+                {{string.Join("\n\n", contextAfter.Select(b => $"BLOCK {b.Number}:\n{b.Text}"))}}
 
                 INSTRUCTIONS:
-                - Translate only specified blocks exactly to the {language} literary style.
+                - Translate only specified blocks exactly to the {{language}} literary style.
+                - Use the known terms for consistency.
+                - If new specific terms are found, include them in the translation output as part of the JSON response.
                 - Maintain consistent terminology across the entire translation.
-                - **IMPORTANT:** When translating the current blocks, take into account the subsequent context (CONTEXT AFTER) to ensure a smooth and natural flow in the final text.
                 - Preserve all formatting, symbols, and technical markers (e.g. [MUSIC], ♪).
-                - Output ONLY the translated blocks in the following format:
-                {string.Join("\n", batch.Select(b => $"BLOCK {b.Number}\n<translation>"))}
-
-                Note that these are the subtitles. 
-                Each translated block should not be very long and should be really close to the original block by meaning.
+                - Output the response in JSON format wrapped in a markdown code block with the following structure:
+                ```json
+                {
+                  "translations": [
+                    {
+                      "number": int,
+                      "time": "string",
+                      "text": "string"
+                    }
+                  ],
+                  "terms": {
+                    "originalTerm": "translatedTerm"
+                  }
+                }
+                ```
                 """;
     }
+
+    private string ExtractJsonFromMarkdown(string markdownContent)
+    {
+        var match = Regex.Match(markdownContent, @"```json\s*([\s\S]*?)\s*```");
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+        throw new InvalidOperationException("Failed to extract JSON from API response.");
+    }
+}
+
+// Вспомогательные классы для десериализации ответа от API
+public class MistralResponse
+{
+    [JsonPropertyName("choices")]
+    public List<Choice> Choices { get; set; }
+}
+
+public class Choice
+{
+    [JsonPropertyName("message")]
+    public Message Message { get; set; }
+}
+
+public class Message
+{
+    [JsonPropertyName("content")]
+    public string Content { get; set; }
 }

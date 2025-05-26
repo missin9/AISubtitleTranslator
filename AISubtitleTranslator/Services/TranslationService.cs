@@ -19,6 +19,7 @@ public class TranslationService : ITranslationService
     private readonly ISrtParser _srtParser;
     private readonly IMistralTranslator _translator;
     private readonly IVerificationService _verificationService;
+    private readonly Dictionary<string, string> _termTranslations;
 
     public TranslationService(
         IHubContext<TranslationHub> hubContext,
@@ -32,6 +33,7 @@ public class TranslationService : ITranslationService
         _translator = translator;
         _verificationService = verificationService;
         _hubService = hubService;
+        _termTranslations = new Dictionary<string, string>();
     }
 
     public IHubContext<TranslationHub> HubContext { get; }
@@ -92,9 +94,9 @@ public class TranslationService : ITranslationService
                 var contextAfter = GetContextBlocks(blocks, i + blocksToTranslate, contextAfterSize);
 
                 var batchTranslationResult = await _translator.TranslateBatch(
-                    batch, contextBefore, contextAfter, translations, translationConfig);
+                    batch, contextBefore, contextAfter, translations, translationConfig, _termTranslations);
 
-                foreach (var (blockNumber, translation) in batchTranslationResult)
+                foreach (var (blockNumber, translation) in batchTranslationResult.Translations)
                 {
                     var block = batch.First(b => b.Number == blockNumber);
                     translations[blockNumber] = translation;
