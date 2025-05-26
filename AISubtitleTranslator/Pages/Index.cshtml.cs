@@ -31,7 +31,7 @@ public class IndexModel : PageModel
         return ContextSize switch
         {
             "small" => (1, 1, 2),
-            "large" => (4, 4, 8),
+            "large" => (5, 5, 8),
             _ => (2, 3, 4) // medium по умолчанию
         };
     }

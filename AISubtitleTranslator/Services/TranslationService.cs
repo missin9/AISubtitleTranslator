@@ -11,9 +11,9 @@ public class TranslationService : ITranslationService
 {
     private const int DefaultDelayMs = 1000;
     private const int StatusCheckDelayMs = 500;
-    private const int DefaultBlocksToTranslate = 4;
-    private const int DefaultContextBeforeSize = 2;
-    private const int DefaultContextAfterSize = 3;
+    private const int DefaultBlocksToTranslate = 8;
+    private const int DefaultContextBeforeSize = 5;
+    private const int DefaultContextAfterSize = 5;
 
     private readonly IHubCommunicationService _hubService;
     private readonly ISrtParser _srtParser;
