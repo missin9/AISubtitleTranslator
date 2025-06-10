@@ -2,7 +2,7 @@
 
 namespace AISubtitleTranslator.Services;
 
-public interface IMistralTranslator
+public interface ILlmTranslator
 {
     Task<TranslationResponse> TranslateBatch(
         List<SrtBlock> batch,

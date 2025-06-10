@@ -11,7 +11,7 @@ public class TranslationConfig
     public int BlocksToTranslate { get; set; }
     public int ContextBeforeSize { get; set; }
     public int ContextAfterSize { get; set; }
-    public double Temperature { get; set; } = 0.3;
+    public double Temperature { get; set; } = 1.3;
     public double TopP { get; set; } = 0.9;
     public string SystemPrompt { get; set; }
 }

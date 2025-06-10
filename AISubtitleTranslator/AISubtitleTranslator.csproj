@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="OpenAI-DotNet" Version="8.6.4" />
         <PackageReference Include="TiktokenSharp" Version="1.1.7"/>
     </ItemGroup>
 
@@ -33,8 +34,8 @@
         <Compile Update="Services\FileService.cs">
             <DependentUpon>IFileService.cs</DependentUpon>
         </Compile>
-        <Compile Update="Services\MistralTranslator.cs">
-            <DependentUpon>IMistralTranslator.cs</DependentUpon>
+        <Compile Update="Services\LlmTranslator.cs">
+            <DependentUpon>ILlmTranslator.cs</DependentUpon>
         </Compile>
         <Compile Update="Services\SrtParser.cs">
             <DependentUpon>ISrtParser.cs</DependentUpon>

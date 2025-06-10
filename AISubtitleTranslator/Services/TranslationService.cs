@@ -9,29 +9,29 @@ namespace AISubtitleTranslator.Services;
 /// </summary>
 public class TranslationService : ITranslationService
 {
-    private const int DefaultDelayMs = 1000;
-    private const int StatusCheckDelayMs = 500;
+    private const int DefaultDelayMs = 7000;
+    private const int StatusCheckDelayMs = 2000;
     private const int DefaultBlocksToTranslate = 8;
     private const int DefaultContextBeforeSize = 5;
     private const int DefaultContextAfterSize = 5;
+    private const int MaxRetries = 5;
 
     private readonly IHubCommunicationService _hubService;
     private readonly ISrtParser _srtParser;
-    private readonly IMistralTranslator _translator;
-    private readonly IVerificationService _verificationService;
+    private readonly ILlmTranslator _translator;
+    // private readonly IVerificationService _verificationService;
     private readonly Dictionary<string, string> _termTranslations;
 
     public TranslationService(
         IHubContext<TranslationHub> hubContext,
         ISrtParser srtParser,
-        IMistralTranslator translator,
-        IVerificationService verificationService,
+        ILlmTranslator translator,
         IHubCommunicationService hubService)
     {
         HubContext = hubContext;
         _srtParser = srtParser;
         _translator = translator;
-        _verificationService = verificationService;
+        // _verificationService = verificationService;
         _hubService = hubService;
         _termTranslations = new Dictionary<string, string>();
     }
@@ -93,9 +93,31 @@ public class TranslationService : ITranslationService
                 var contextBefore = GetContextBlocks(blocks, i - contextBeforeSize, contextBeforeSize);
                 var contextAfter = GetContextBlocks(blocks, i + blocksToTranslate, contextAfterSize);
 
-                var batchTranslationResult = await _translator.TranslateBatch(
-                    batch, contextBefore, contextAfter, translations, translationConfig, _termTranslations);
+                TranslationResponse batchTranslationResult;
+                
+                var attempt = 0;
 
+                while (true)
+                {
+                    try
+                    {
+                        attempt++;
+                        
+                        batchTranslationResult = await _translator.TranslateBatch(
+                            batch, contextBefore, contextAfter, translations, translationConfig, _termTranslations);
+                        
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (attempt >= MaxRetries)
+                        {
+                            throw;
+                        }
+                        
+                        await Task.Delay(DefaultDelayMs * attempt);
+                    }
+                }
                 foreach (var (blockNumber, translation) in batchTranslationResult.Translations)
                 {
                     var block = batch.First(b => b.Number == blockNumber);
@@ -151,8 +173,11 @@ public class TranslationService : ITranslationService
         List<SrtBlock> translatedBlocks,
         string language)
     {
-        await foreach (var issue in _verificationService.IdentifyIssues(originalBlocks, translatedBlocks, language))
-            yield return issue;
+        // await foreach (var issue in _verificationService.IdentifyIssues(originalBlocks, translatedBlocks, language))
+        //     yield return issue;
+
+        throw new NotImplementedException();
+        yield break; 
     }
 
     /// <summary>
@@ -165,8 +190,10 @@ public class TranslationService : ITranslationService
         int contextBeforeSize,
         int contextAfterSize)
     {
-        return await _verificationService.RetranslateBlocks(issues, allBlocks, language, contextBeforeSize,
-            contextAfterSize);
+        // return await _verificationService.RetranslateBlocks(issues, allBlocks, language, contextBeforeSize,
+        //     contextAfterSize);
+        
+        throw new NotImplementedException();
     }
 
     /// <summary>
