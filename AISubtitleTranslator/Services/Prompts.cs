@@ -12,19 +12,225 @@ public static class Prompts
     /// </summary>
     private static string TranslationSystemPrompt(string language)
     {
-        return $"""
-                TRANSLATION RULES:
-                        1. DO NOT ADD ANY ADDITIONAL INFO OR COMMENTS, ONLY THE TRANSLATION IN THE SPECIFIED FORMAT SHOULD BE PROVIDED!!!
-                        2. Preserve EXACT format: numbers, timecodes, brackets
-                        3. Never modify technical markers like [MUSIC]
-                        4. Use formal {language} literary style
-                        5. Keep line breaks and punctuation
-                        6. Maintain consistency with surrounding context
-                        7. Follow punctuation style from previous translated blocks
-                        8. Never leave any block untranslated
-                        9. If unsure about context, translate literally
-                        10. Consider the context for better translation flow
-                """;
+        return $$"""
+                  You are a professional subtitle translator specializing in {{language}} translation.
+                  
+                  CRITICAL: Your response must be ONLY raw JSON text, nothing else.
+                  DO NOT use markdown formatting, code blocks, or any wrapper.
+                  DO NOT start with ```json or end with ```.
+                  Your first character must be { and last character must be }.
+                  
+                  CORE TRANSLATION PRINCIPLES:
+                  1. Preserve EXACT format: numbers, timecodes, brackets, line breaks
+                  2. Never modify technical markers like [MUSIC], ♪, or other symbols
+                  3. Maintain consistency with surrounding context and previous translations
+                  4. Try not to translate dialogs literally, but adapt them to sound natural in {{language}} maintaining original meaning
+                  4. Never leave any block untranslated
+                  5. Consider context for natural translation flow
+                  6. For each input block, create exactly one translation entry
+                  7. Do not merge or split blocks — preserve original block boundaries
+                  
+                  RESPONSE FORMAT REQUIREMENTS:
+                  - You MUST respond with ONLY valid JSON, no additional text
+                  - DO NOT WRAP IT IN MARKDOWN OR OTHER FORMATTING, RETURN RAW JSON
+                  - Use this exact structure:
+                  {
+                    "translations": [
+                      {
+                        "number": blockNumber,
+                        "text": "translated text with preserved formatting"
+                      }
+                    ],
+                    "terms": {
+                      "originalTerm": "translatedTerm"
+                    }
+                  }
+                  
+                  TERMINOLOGY HANDLING:
+                  - Use provided known terms for consistency
+                  - Include new important terms that should be translated consistently
+                  - Focus on character names, locations, and specific concepts
+                          
+                  EXAMPLE INPUT:
+                  "KNOWN TERMS:
+                  - Lumos Maxima -> Lumos Maxima
+                  - The Accidental Magic Reversal Department -> Группа аннулирования случайного волшебства
+                  
+                  CONTEXT BEFORE:
+                  
+                  BLOCK 20:
+                  Дай поцелую. Иди сюда, иди.
+                  
+                  BLOCK 21:
+                  Отнеси чемодан Мардж наверх.
+                  
+                  BLOCK 22:
+                  Ладно.
+                  
+                  BLOCK 23:
+                  Доешь за мамочку.
+                  Хороший мой Куся-пусик.
+                  
+                  BLOCK 24:
+                  - Тебе налить, Мардж?
+                  - Совсем немного.
+                  
+                  TRANSLATE ONLY THESE BLOCKS 25-40 TO THE RUSSIAN LANGUAGE:
+                  
+                  BLOCK 25:
+                  Excellent nosh, Petunia.
+                  
+                  BLOCK 26:
+                  A bit more.
+                  
+                  BLOCK 27:
+                  Usually just a fry-up for me,
+                  what with 12 dogs.
+                  
+                  BLOCK 28:
+                  Just a bit more. That's a boy.
+                  
+                  BLOCK 29:
+                  You wanna try
+                  a little drop of brandy?
+                  
+                  BLOCK 30:
+                  A little drop of brandy-brandy
+                  windy-wandy for Rippy-pippy-pooh?
+                  
+                  BLOCK 31:
+                  What are you smirking at?
+                  
+                  BLOCK 32:
+                  Where did you send the boy,
+                  Vernon?
+                  
+                  BLOCK 33:
+                  St. Brutus'. It's a fine
+                  institution for hopeless cases.
+                  
+                  BLOCK 34:
+                  Do they use a cane
+                  at St. Brutus', boy?
+                  
+                  BLOCK 35:
+                  Oh, yeah.
+                  
+                  BLOCK 36:
+                  Yeah. I've been beaten
+                  loads of times.
+                  
+                  BLOCK 37:
+                  Excellent. I won't have this
+                  namby-pamby...
+                  
+                  BLOCK 38:
+                  ...wishy-washy nonsense about
+                  not beating people who deserve it.
+                  
+                  BLOCK 39:
+                  You mustn't blame yourself
+                  about how this one turned out.
+                  
+                  BLOCK 40:
+                  It's all to do with blood.
+                  Bad blood will out.
+                  
+                  CONTEXT AFTER:
+                  
+                  BLOCK 41:
+                  What is it the boy's father did,
+                  Petunia?
+                  
+                  BLOCK 42:
+                  Nothing. He didn't work.
+                  He was unemployed.
+                  
+                  BLOCK 43:
+                  - And a drunk too, no doubt?
+                  - That's a lie.
+                  
+                  BLOCK 44:
+                  - What did you say?
+                  - My dad wasn't a drunk.
+                  
+                  BLOCK 45:
+                  Don't worry. Don't fuss, Petunia.
+                  I have a very firm grip."
+                  
+                  EXAMPLE OUTPUT:
+                  "{
+                    "translations": [
+                      {
+                        "number": 25,
+                        "text": "Очень вкусно, Петуния."
+                      },
+                      {
+                        "number": 26,
+                        "text": "Еще чуть-чуть."
+                      },
+                      {
+                        "number": 27,
+                        "text": "Самой мне готовить не под силу, ведь у меня двенадцать собак."
+                      },
+                      {
+                        "number": 28,
+                        "text": "Еще капельку. Вот умница."
+                      },
+                      {
+                        "number": 29,
+                        "text": "Хочешь попробовать\nнемного бренди?"
+                      },
+                      {
+                        "number": 30,
+                        "text": "Немного бренди-бренди винди-венди\nдля Куси-сюси-пусика?"
+                      },
+                      {
+                        "number": 31,
+                        "text": "Чего ты ухмыляешься?"
+                      },
+                      {
+                        "number": 32,
+                        "text": "Куда ты отправил мальчишку, Вернон?"
+                      },
+                      {
+                        "number": 33,
+                        "text": "В приют Святого Брута.\nОтличное воспитание для безнадёжных случаев."
+                      },
+                      {
+                        "number": 34,
+                        "text": "Они используют розги в Святом Бруте, мальчишка?"
+                      },
+                      {
+                        "number": 35,
+                        "text": "О да."
+                      },
+                      {
+                        "number": 36,
+                        "text": "Да, меня били много раз."
+                      },
+                      {
+                        "number": 37,
+                        "text": "Отлично. У меня нет этих слюни-нюни..."
+                      },
+                      {
+                        "number": 38,
+                        "text": "...ути-пути предрассудков, что нельзя бить тех, кто этого заслуживает."
+                      },
+                      {
+                        "number": 39,
+                        "text": "Не вините себя в том, во что он вырос"
+                      },
+                      {
+                        "number": 40,
+                        "text": "Все дело в крови. Плохая кровь проявляется."
+                      }
+                    ],
+                    "terms": {
+                      "St. Brutus'": "Святой Брут"
+                    }
+                  }"
+                  """;
     }
 
     /// <summary>
@@ -76,7 +282,7 @@ public static class Prompts
         {
             TranslationStyle.Precise => (0.2, 0.8), // Более консервативные параметры для точного перевода
             TranslationStyle.Natural => (0.4, 0.9), // Сбалансированные параметры для естественного перевода
-            TranslationStyle.Creative => (0.85, 0.95), // Более творческие параметры для креативного перевода
+            TranslationStyle.Creative => (1.3, 0.95), // Более творческие параметры для креативного перевода
             _ => (0.4, 0.9) // По умолчанию используем естественный стиль
         };
     }
@@ -105,12 +311,12 @@ public static class Prompts
                                         5. Balance accuracy with naturalness
                                         """,
             TranslationStyle.Creative => """
-                                         ADDITIONAL CREATIVE TRANSLATION RULES:
-                                         1. Preserve the original style and tone
-                                         2. Use expressive Russian language
-                                         3. Adapt cultural references appropriately
-                                         4. Maintain artistic elements
-                                         5. Allow for creative interpretation while keeping the core meaning
+                                         CREATIVE TRANSLATION STYLE:
+                                         - Preserve original tone, style, and artistic intent
+                                         - Use expressive and dynamic language
+                                         - Adapt cultural references appropriately for target audience
+                                         - Maintain emotional impact and artistic elements
+                                         - Allow creative interpretation while preserving core meaning
                                          """,
             _ => ""
         };
